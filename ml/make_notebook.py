@@ -18,10 +18,10 @@ Runs on a free Colab / Kaggle T4 GPU in about 10 minutes.
 The hand-checked test set is **not** used here. It is only used by `ml/evaluate.py`."""),
 ("code", """!pip -q install "transformers==4.47.1" "datasets==3.2.0" "seqeval==1.2.2" "onnx==1.17.0" "onnxruntime==1.20.1" "accelerate>=1.2" huggingface_hub"""),
 ("code", """# --- settings ---
-REPO_URL = "https://github.com/YOUR-USER/resume-screener.git"   # or upload data/train.jsonl by hand
+REPO_URL = "https://github.com/nikhilg-droid/Resume-screener.git"   # or upload data/train.jsonl by hand
 TRAIN_FILE = "resume-screener/data/train.jsonl"
 MODEL_NAME = "distilbert-base-cased"   # cased: capital letters help spot names of colleges and companies
-HF_REPO = "YOUR-HF-USER/resume-ner-distilbert-onnx"
+HF_REPO = "1233knfx/resume-ner-distilbert-onnx"
 EPOCHS = 5
 LR = 5e-5
 OUT = "resume-ner"
