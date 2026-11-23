@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+node_modules/
+frontend/dist/
+.env
+.env.*
+!.env.example
+.vercel/
+models/
+*.onnx
+data/raw/
