@@ -19,10 +19,17 @@ def test_tokenize_records_character_offsets():
 
 def test_spans_to_bio_tags_first_word_B_and_rest_I():
     text = "Worked at Tata Consultancy Services using Python"
-    spans = [Span(10, 36, "COMPANY"), Span(43, 49, "SKILL")]
+    spans = [Span(10, 35, "COMPANY"), Span(42, 48, "SKILL")]
     words, tags = spans_to_bio(text, spans)
     assert [w.text for w in words] == ["Worked", "at", "Tata", "Consultancy", "Services", "using", "Python"]
     assert tags == ["O", "O", "B-COMPANY", "I-COMPANY", "I-COMPANY", "O", "B-SKILL"]
+
+
+def test_spans_to_bio_tags_words_that_only_partly_overlap_a_span():
+    # LLM-made labels are sometimes off by a character; the word is still tagged.
+    text = "Python developer"
+    words, tags = spans_to_bio(text, [Span(1, 5, "SKILL")])
+    assert tags == ["B-SKILL", "O"]
 
 
 def test_bio_to_spans_round_trips():
