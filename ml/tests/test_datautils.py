@@ -59,3 +59,10 @@ def test_score_reports_entity_level_macro_f1_and_token_accuracy():
     assert s["per_label"]["SKILL"] == 1.0
     assert s["per_label"]["COMPANY"] == 0.0
     assert s["macro_f1"] == 0.5
+
+
+def test_align_skips_malformed_entities_from_the_llm():
+    text = "Python and SQL"
+    ents = ["Python", None, {"text": "SQL"}, {"label": "SKILL"}, {"text": 5, "label": "SKILL"},
+            {"text": "SQL", "label": "SKILL"}]
+    assert align_entities(text, ents) == [Span(11, 14, "SKILL")]

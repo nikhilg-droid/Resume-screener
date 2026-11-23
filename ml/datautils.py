@@ -30,6 +30,8 @@ def align_entities(text: str, entities: list[dict]) -> list[Span]:
     taken: list[tuple[int, int]] = []
     cursor = 0
     for ent in entities:
+        if not isinstance(ent, dict):
+            continue
         label, needle = ent.get("label"), str(ent.get("text", "")).strip()
         if label not in LABELS or not needle:
             continue
