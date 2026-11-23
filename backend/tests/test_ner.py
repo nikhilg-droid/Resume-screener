@@ -47,3 +47,26 @@ def test_extract_entities_on_empty_text_does_not_call_model():
     tagger = DictTagger({})
     assert extract_entities("  ", tagger) == []
     assert tagger.calls == []
+
+
+def test_extract_entities_drops_punctuation_and_stopword_entities():
+    text = "Python - or our SQL"
+    tagger = DictTagger({"Python": "SKILL", "-": "SKILL", "or": "SKILL", "our": "COMPANY", "SQL": "SKILL"})
+    assert [s.text_in(text) for s in extract_entities(text, tagger)] == ["Python", "SQL"]
+
+
+def test_extract_entities_drops_years_without_a_number():
+    text = "3 years and several years"
+
+    class FixedTagger:
+        def tag(self, words):
+            return ["B-YEARS_EXP", "I-YEARS_EXP", "O", "B-YEARS_EXP", "I-YEARS_EXP"]
+
+    spans = extract_entities(text, FixedTagger())
+    assert [s.text_in(text) for s in spans] == ["3 years"]
+
+
+def test_extract_entities_keeps_short_real_skills():
+    text = "R and C plus Go"
+    tagger = DictTagger({"R": "SKILL", "C": "SKILL", "Go": "SKILL"})
+    assert [s.text_in(text) for s in extract_entities(text, tagger)] == ["R", "C", "Go"]
