@@ -21,11 +21,14 @@ class LLMError(Exception):
 
 
 class GroqClient:
-    def __init__(self, api_key: str, model: str, transport: httpx.BaseTransport | None = None):
+    def __init__(self, api_key: str, model: str, transport: httpx.BaseTransport | None = None,
+                 url: str = GROQ_URL, auth_header: str = "Authorization"):
+        """Groq by default. The same client talks to any OpenAI-compatible chat API
+        (used by ml/generate_data.py to write training data with another provider)."""
         self.model = model
-        self._client = httpx.Client(
-            headers={"Authorization": f"Bearer {api_key}"}, timeout=30, transport=transport
-        )
+        self.url = url
+        value = f"Bearer {api_key}" if auth_header == "Authorization" else api_key
+        self._client = httpx.Client(headers={auth_header: value}, timeout=60, transport=transport)
 
     def chat_json(self, messages: list[dict]) -> dict:
         body = {
@@ -35,17 +38,17 @@ class GroqClient:
             "response_format": {"type": "json_object"},
         }
         try:
-            r = self._client.post(GROQ_URL, json=body)
+            r = self._client.post(self.url, json=body)
         except httpx.HTTPError as e:
-            raise LLMError(f"could not reach Groq: {e.__class__.__name__}") from e
+            raise LLMError(f"could not reach the LLM: {e.__class__.__name__}") from e
         if r.status_code == 429:
-            raise LLMError("Groq rate limit reached, try again in a minute")
+            raise LLMError("rate limit reached, try again in a minute")
         if r.status_code >= 400:
-            raise LLMError(f"Groq returned HTTP {r.status_code}")
+            raise LLMError(f"LLM returned HTTP {r.status_code}")
         try:
             return json.loads(r.json()["choices"][0]["message"]["content"])
         except (KeyError, IndexError, ValueError) as e:
-            raise LLMError("Groq reply was not valid JSON") from e
+            raise LLMError("LLM reply was not valid JSON") from e
 
 
 SYSTEM_PROMPT = """You help a recruiter screen resumes for one job.

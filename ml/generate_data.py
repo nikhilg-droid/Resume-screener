@@ -6,7 +6,7 @@ We find each entity in the text, convert to BIO tags, cut into BERT-sized chunks
   python ml/generate_data.py --n 400 --out data/train.jsonl --seed 1
   python ml/generate_data.py --n 120 --out data/test_raw.jsonl --seed 999 --messy   # for the test set
 
-Needs GROQ_API_KEY in the environment. Safe to stop and re-run: it appends and skips done ids.
+Needs GROQ_API_KEY (or SARVAM_API_KEY with --provider sarvam) in the environment. Safe to stop and re-run: it appends and skips done ids.
 """
 from __future__ import annotations
 
@@ -98,11 +98,16 @@ def main():
     ap.add_argument("--out", default="data/train.jsonl")
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--messy", action="store_true", help="use messy formats (good for the test set)")
-    ap.add_argument("--model", default="llama-3.3-70b-versatile")
+    ap.add_argument("--provider", choices=["groq", "sarvam"], default="groq")
+    ap.add_argument("--model", default=None, help="default: llama-3.3-70b-versatile (groq), sarvam-105b (sarvam)")
     ap.add_argument("--sleep", type=float, default=2.5, help="seconds between calls (rate limits)")
     args = ap.parse_args()
 
-    client = GroqClient(os.environ["GROQ_API_KEY"], args.model)
+    if args.provider == "sarvam":
+        client = GroqClient(os.environ.get("SARVAM_API_KEY", "proxy-injected"), args.model or "sarvam-105b",
+                            url="https://api.sarvam.ai/v1/chat/completions", auth_header="api-subscription-key")
+    else:
+        client = GroqClient(os.environ["GROQ_API_KEY"], args.model or "llama-3.3-70b-versatile")
     rng = random.Random(args.seed)
     out = ROOT / args.out
     rows = read_jsonl(out) if out.exists() else []
