@@ -14,6 +14,8 @@ import time
 from pathlib import Path
 from typing import Protocol
 
+import re
+
 import numpy as np
 
 from .text import Span, bio_to_spans, chunk_text, tokenize_words
@@ -39,6 +41,23 @@ def first_subtoken_tags(word_ids, logits, id2label: dict[int, str], n_words: int
     return tags
 
 
+STOPWORDS = {
+    "a", "an", "and", "as", "at", "by", "for", "from", "in", "of", "on", "or", "our", "the",
+    "to", "with", "we", "you", "your", "is", "are", "be", "will", "present",
+}
+
+
+def is_plausible(text: str, label: str) -> bool:
+    """Drop obvious model slips before they reach the UI: pure punctuation, lone stopwords,
+    and experience phrases with no number in them."""
+    t = text.strip()
+    if not re.search(r"[A-Za-z0-9]", t) or t.lower() in STOPWORDS:
+        return False
+    if label == "YEARS_EXP" and not re.search(r"\d", t):
+        return False
+    return True
+
+
 def extract_entities(text: str, tagger: WordTagger, max_words: int = 200) -> list[Span]:
     """Split the resume into chunks, tag each chunk, and return entity spans
     with offsets in the original text."""
@@ -49,6 +68,8 @@ def extract_entities(text: str, tagger: WordTagger, max_words: int = 200) -> lis
             continue
         tags = tagger.tag([w.text for w in words])
         for s in bio_to_spans(chunk.text, words, tags):
+            if not is_plausible(s.text_in(chunk.text), s.label):
+                continue
             spans.append(Span(s.start + chunk.offset, s.end + chunk.offset, s.label))
     return spans
 
