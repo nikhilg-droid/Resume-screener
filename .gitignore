@@ -11,3 +11,5 @@ frontend/dist/
 models/
 *.onnx
 data/raw/
+*.zip
+local.db
