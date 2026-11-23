@@ -88,3 +88,20 @@ def test_groq_client_rejects_non_json_content():
     client = GroqClient("k", "m", transport=httpx.MockTransport(lambda r: httpx.Response(200, json=reply)))
     with pytest.raises(LLMError):
         client.chat_json([{"role": "user", "content": "hi"}])
+
+
+def test_client_can_target_another_openai_compatible_provider():
+    seen = {}
+
+    def handler(request: httpx.Request):
+        seen["url"] = str(request.url)
+        seen["headers"] = request.headers
+        content = json.dumps({"ok": True})
+        return httpx.Response(200, json={"choices": [{"message": {"content": content}}]})
+
+    client = GroqClient("k", "m", url="https://api.sarvam.ai/v1/chat/completions",
+                        auth_header="api-subscription-key", transport=httpx.MockTransport(handler))
+    assert client.chat_json([{"role": "user", "content": "hi"}]) == {"ok": True}
+    assert seen["url"] == "https://api.sarvam.ai/v1/chat/completions"
+    assert seen["headers"]["api-subscription-key"] == "k"
+    assert "authorization" not in seen["headers"]
